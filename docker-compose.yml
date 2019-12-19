@@ -1,0 +1,13 @@
+---
+version: "2.1"
+
+services:
+  yt-tgbot:
+    build: .
+    environment:
+      - "TZ=Asia/Kuala_Lumpur"
+    volumes:
+      - ./last:/app/last
+      - ./logs:/app/logs
+    restart: always
+    mem_limit: 20m
