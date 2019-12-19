@@ -1,8 +1,6 @@
-.idea
 node_modules
-last/*
+last/
 src/bot-config.json
-/INSTRUCTION.md
 logs/
 _bot-config.json
 yarn.lock

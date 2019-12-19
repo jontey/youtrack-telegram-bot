@@ -14,6 +14,6 @@
   "error_file": "./logs/youtrack_bot_error.log",
   "exec_mode": "cluster",
   "instances": 1,
-  "cron_restart": "* * * * *",
+  "cron_restart": "*/5 * * * *",
   "autorestart": false
 }
