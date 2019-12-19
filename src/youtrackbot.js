@@ -150,7 +150,7 @@ class YoutrackBot {
     _getCommentMessage(issue, comment) {
         let time = comment.updated === 0 ? comment.created : comment.updated;
         let timeStr = moment(1 * time).format(TIME_FORMAT);
-        let msg = `<b>${timeStr}</b> - ${this._escape(comment.author)} <i>commented</i> <a href="${issue.url}">${issue.id}</a> ${this._escape(issue.summary)} ${issue.description} <pre>${comment.text}</pre>`;
+        let msg = `<b>${timeStr}</b> - ${this._escape(comment.author)} <i>commented</i> <a href="${issue.url}">${issue.id}</a> ${this._escape(issue.summary)} <pre>${comment.text}</pre>`;
 
         debug('_getCommentMessage() message=', msg);
 
