@@ -31,7 +31,6 @@ class YoutrackBot {
 
         this.yt = new Youtrack(this.config);
 
-        let token = await this.yt.getAccessToken();
         let last = await this._getUpdatedAfter();
 
         this.issues = await this.yt.issuesChanges(this.projectName, {updatedAfter: last.ts, max: max});
@@ -135,8 +134,9 @@ class YoutrackBot {
     }
 
     _getMessage(issue, changedFields, time) {
-        let timeStr = moment(1 * time).format(DATETIME_FORMAT);
-        let msg = `<b>${this._escape(issue.updaterName)}</b> ${timeStr} ${issue.operation} <a href="${issue.url}">${issue.id}</a> ${this._escape(issue.summary)} ${issue.description} ${changedFields} ${issue.attachments}`;
+        const TIME_FORMAT = "hA D/M ddd"
+        let timeStr = moment(1 * time).format(TIME_FORMAT);
+        let msg = `<b>${timeStr}</b> - ${this._escape(issue.updaterName)} ${issue.operation} <a href="${issue.url}">${issue.id}</a> ${this._escape(issue.summary)} ${issue.description} ${changedFields} ${issue.attachments}`;
 
         debug('_getMessage() message=', msg);
 
