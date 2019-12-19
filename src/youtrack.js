@@ -89,17 +89,50 @@ class Youtrack {
 
         if (response.change) {
             for (let change of response.change) {
-                let _change = {changedFields: []};
                 let res = this._normalizeFields(change.field);
                 issue.changes.push(res);
             }
         }
 
         issue.changes = this._changesUpdatedAfter(issue, updatedAfter);
+        issue.comments = await this.issueComments(issueId, updatedAfter)
 
         debug('issueChanges() issue=%O', issue);
 
         return issue;
+    }
+
+    async issueComments(issueId, updatedAfter) {
+        let url = `${this.baseUrl}/rest/issue/${issueId}/comment`;
+        let params = {url: url, headers: this._getHeaders()};
+        let comments = [];
+
+        let response = null;
+
+        try {
+            response = await request.get(params);
+            response = JSON.parse(response);
+        }
+        catch (err) {
+            comments.__error = err;
+            debug('issueComments() error=', err);
+            if (err.statusCode == 404) {
+                return comments;
+            }
+        }
+
+        debug('issueComments() response=%j', response);
+
+        if (response) {
+            for (let comment of response) {
+                comments.push(comment);
+            }
+        }
+
+        comments = this._commentsUpdatedAfter(comments, updatedAfter)
+        debug('issueComments() comments=%O', comments);
+
+        return comments;
     }
 
     _normalizeFields(fields) {
@@ -160,6 +193,24 @@ class Youtrack {
         return issue.changes.filter(change => {
             debug('_changesUpdatedAfter() issue=', issue, 'change=', change, 'tsUpdated=', tsUpdated, 'change.updated >= tsUpdated ==>', change.updated >= tsUpdated);
             return change.updated >= tsUpdated;
+        });
+    }
+
+    /**
+     * Filters out comment changes by updated after timestamp value.
+     * @param {object} issue issue instance
+     * @param {number} tsUpdated updated after date and time value in timestamp
+     * @returns {Array} filtered list of changes, which are updated after given timestamp
+     * @private
+     */
+    _commentsUpdatedAfter(comments, tsUpdated) {
+        if (!comments || !tsUpdated) {
+            return [];
+        }
+
+        return comments.filter(comment => {
+            debug('_commentsUpdatedAfter() comment=', comment, 'tsUpdated=', tsUpdated, 'comment.updated >= tsUpdated ==>', comment.updated >= tsUpdated);
+            return comment.updated === 0 ? comment.created >= tsUpdated : comment.updated >= tsUpdated;
         });
     }
 

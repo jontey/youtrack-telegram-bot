@@ -10,6 +10,7 @@ const Youtrack = require('./youtrack');
 debug.log = console.log.bind(console);
 
 const DATETIME_FORMAT = 'DD.MM.YYYY HH:mm:ss';
+const TIME_FORMAT = "hA D/M ddd";
 
 class YoutrackBot {
     constructor(config, telegramOptions = {token: null, chatId: null}) {
@@ -84,7 +85,7 @@ class YoutrackBot {
                 for (let issue of this.issues) {
                     issue.description = issue.description ? `\n<pre>${this._escape(issue.description)}</pre>` : '';
                     issue.url = `${this.youtrackIssueBaseUrl}${issue.id}`;
-                    issue.operation = issue.changes && issue.changes.length > 0 ? 'updated' : 'created'; // operation: created | updated
+                    issue.operation = issue.created === issue.updated ? 'created' : 'updated'; // operation: created | updated
                     issue.attachments = this._getAttachments(issue);
 
                     let changedFields = '';
@@ -93,6 +94,10 @@ class YoutrackBot {
                         for (let change of issue.changes) {
                             changedFields = this._getChangedFields(change);
                             issue.message = this._getMessage(issue, changedFields, change.updated);
+                            issue.sendResult = await this._send(issue.message);
+                        }
+                        for (let comment of issue.comments) {
+                            issue.message = this._getCommentMessage(issue, comment);
                             issue.sendResult = await this._send(issue.message);
                         }
                     } else {
@@ -134,11 +139,20 @@ class YoutrackBot {
     }
 
     _getMessage(issue, changedFields, time) {
-        const TIME_FORMAT = "hA D/M ddd"
         let timeStr = moment(1 * time).format(TIME_FORMAT);
-        let msg = `<b>${timeStr}</b> - ${this._escape(issue.updaterName)} ${issue.operation} <a href="${issue.url}">${issue.id}</a> ${this._escape(issue.summary)} ${issue.description} ${changedFields} ${issue.attachments}`;
+        let msg = `<b>${timeStr}</b> - ${this._escape(issue.updaterName)} <i>${issue.operation}</i> <a href="${issue.url}">${issue.id}</a> ${this._escape(issue.summary)} ${issue.description} ${changedFields} ${issue.attachments}`;
 
         debug('_getMessage() message=', msg);
+
+        return msg;
+    }
+
+    _getCommentMessage(issue, comment) {
+        let time = comment.updated === 0 ? comment.created : comment.updated;
+        let timeStr = moment(1 * time).format(TIME_FORMAT);
+        let msg = `<b>${timeStr}</b> - ${this._escape(comment.author)} <i>commented</i> <a href="${issue.url}">${issue.id}</a> ${this._escape(comment.text)}`;
+
+        debug('_getCommentMessage() message=', msg);
 
         return msg;
     }
