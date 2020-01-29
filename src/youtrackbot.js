@@ -81,7 +81,6 @@ class YoutrackBot {
         debug('_process() started.');
         return new Promise(async(resolve, reject) => {
             try {
-
                 for (let issue of this.issues) {
                     issue.description = issue.description ? `\n<pre>${this._escape(issue.description)}</pre>` : '';
                     issue.url = `${this.youtrackIssueBaseUrl}${issue.id}`;
@@ -89,20 +88,24 @@ class YoutrackBot {
                     issue.attachments = this._getAttachments(issue);
 
                     let changedFields = '';
-                    if (issue.operation === 'updated') {
-                        // send additional message for each change
-                        for (let change of issue.changes) {
-                            changedFields = this._getChangedFields(change);
-                            issue.message = this._getMessage(issue, changedFields, change.updated);
+                    try {
+                        if (issue.operation === 'updated') {
+                            // send additional message for each change
+                            for (let change of issue.changes) {
+                                changedFields = this._getChangedFields(change);
+                                issue.message = this._getMessage(issue, changedFields, change.updated);
+                                issue.sendResult = await this._send(issue.message);
+                            }
+                            for (let comment of issue.comments) {
+                                issue.message = this._getCommentMessage(issue, comment);
+                                issue.sendResult = await this._send(issue.message);
+                            }
+                        } else {
+                            issue.message = this._getMessage(issue, changedFields, issue.created);
                             issue.sendResult = await this._send(issue.message);
                         }
-                        for (let comment of issue.comments) {
-                            issue.message = this._getCommentMessage(issue, comment);
-                            issue.sendResult = await this._send(issue.message);
-                        }
-                    } else {
-                        issue.message = this._getMessage(issue, changedFields, issue.created);
-                        issue.sendResult = await this._send(issue.message);
+                    } catch (e) {
+                        debug('_process() send. Error:', e)
                     }
                 }
 
@@ -186,7 +189,7 @@ class YoutrackBot {
                 }
 
                 if (oldVal || newVal) {
-                    changedFields += `\n<i>${changedField}: ${this._escape(oldVal)} -> ${this._escape(newVal)}</i>`;
+                    changedFields += `\n<i>${changedField}: ${this._escape(JSON.stringify(oldVal))} -> ${this._escape(JSON.stringify(newVal))}</i>`;
                 }
             }
 
